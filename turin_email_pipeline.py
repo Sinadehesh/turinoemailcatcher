@@ -80,41 +80,29 @@ USER_AGENTS = [
 
 def build_overpass_query() -> str:
     """
-    Build Overpass QL query targeting Turin administrative boundary.
-    Filters for shops and amenities with website/contact:website tags.
+    Build Overpass QL query targeting Turin using simple bbox.
+    Format: (south, west, north, east)
+    Turin: ~45.03 to 45.12 lat, ~7.57 to 7.72 lon
     """
     query = """
-    [out:json][timeout:90];
-    
-    // Get Turin administrative boundary (admin_level=8 for city)
-    area["name"="Torino"]["admin_level"="8"]["boundary"="administrative"] -> .turin;
-    
-    // Collect all shops and amenities with websites
-    (
-      // Shops with websites
-      node["shop"]["website"](area.turin);
-      way["shop"]["website"](area.turin);
-      relation["shop"]["website"](area.turin);
-      
-      // Shops with contact:website
-      node["shop"]["contact:website"](area.turin);
-      way["shop"]["contact:website"](area.turin);
-      relation["shop"]["contact:website"](area.turin);
-      
-      // Amenities (restaurants, cafes, bars, etc.) with websites
-      node["amenity"~"^(restaurant|cafe|bar|pub|fast_food|ice_cream|bakery|confectionery|hairdresser|beauty|clothes|shoes|jewelry|supermarket|convenience)"]["website"](area.turin);
-      way["amenity"~"^(restaurant|cafe|bar|pub|fast_food|ice_cream|bakery|confectionery|hairdresser|beauty|clothes|shoes|jewelry|supermarket|convenience)"]["website"](area.turin);
-      relation["amenity"~"^(restaurant|cafe|bar|pub|fast_food|ice_cream|bakery|confectionery|hairdresser|beauty|clothes|shoes|jewelry|supermarket|convenience)"]["website"](area.turin);
-      
-      // Amenities with contact:website
-      node["amenity"~"^(restaurant|cafe|bar|pub|fast_food|ice_cream|bakery|confectionery|hairdresser|beauty|clothes|shoes|jewelry|supermarket|convenience)"]["contact:website"](area.turin);
-      way["amenity"~"^(restaurant|cafe|bar|pub|fast_food|ice_cream|bakery|confectionery|hairdresser|beauty|clothes|shoes|jewelry|supermarket|convenience)"]["contact:website"](area.turin);
-      relation["amenity"~"^(restaurant|cafe|bar|pub|fast_food|ice_cream|bakery|confectionery|hairdresser|beauty|clothes|shoes|jewelry|supermarket|convenience)"]["contact:website"](area.turin);
-    );
-    
-    // Output with required tags
-    out body;
-    """
+[out:json][timeout:90];
+(
+  node["shop"]["website"](45.03,7.57,45.12,7.72);
+  node["shop"]["contact:website"](45.03,7.57,45.12,7.72);
+  node["amenity"="restaurant"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="cafe"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="bar"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="pub"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="fast_food"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="bakery"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="hairdresser"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="beauty"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="clothes"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="supermarket"]["website"](45.03,7.57,45.12,7.72);
+  node["amenity"="convenience"]["website"](45.03,7.57,45.12,7.72);
+);
+out body;
+"""
     return query
 
 
@@ -142,6 +130,7 @@ async def fetch_overpass_data(session: aiohttp.ClientSession) -> List[Dict]:
                 return data.get("elements", [])
             else:
                 print(f"❌ Overpass API error: {response.status}")
+                print(f"Response: {await response.text()}")
                 return []
     except Exception as e:
         print(f"❌ Overpass fetch failed: {e}")
