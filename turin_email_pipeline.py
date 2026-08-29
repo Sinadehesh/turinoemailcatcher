@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Turin Business Email Extractor Pipeline"""
+"""Turin Business Email Extractor Pipeline - Fixed Overpass GET request"""
 
 import asyncio
 import aiohttp
@@ -29,37 +29,20 @@ USER_AGENTS = [
 ]
 
 def build_overpass_query() -> str:
-    query = """
-[out:json][timeout:90];
-(
-  node["shop"]["website"](45.03,7.57,45.12,7.72);
-  node["shop"]["contact:website"](45.03,7.57,45.12,7.72);
-  node["amenity"="restaurant"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="cafe"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="bar"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="pub"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="fast_food"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="bakery"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="hairdresser"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="beauty"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="clothes"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="supermarket"]["website"](45.03,7.57,45.12,7.72);
-  node["amenity"="convenience"]["website"](45.03,7.57,45.12,7.72);
-);
-out body;
-"""
+    # Simplified query - test with just one category first
+    query = """[out:json][timeout:25];(node["shop"="clothes"]["website"](45.03,7.57,45.12,7.72););out body;"""
     return query
 
 async def fetch_overpass_data(session: aiohttp.ClientSession) -> List[Dict]:
     query = build_overpass_query()
     headers = {
         "User-Agent": random.choice(USER_AGENTS),
-        "Accept": "application/json",
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Accept": "application/json"
     }
-    form_data = f"data={quote(query)}"
+    # Use GET request with query parameter
+    url = f"{OVERPASS_API_URL}?data={quote(query)}"
     try:
-        async with session.post(OVERPASS_API_URL, data=form_data, headers=headers, timeout=aiohttp.ClientTimeout(total=TIMEOUT_SECONDS)) as response:
+        async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=TIMEOUT_SECONDS)) as response:
             response_text = await response.text()
             if response.status == 200:
                 data = json.loads(response_text)
